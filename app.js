@@ -1,7 +1,9 @@
 const express = require("express");
 const bodyParser = require("body-parser");
 const cors = require("cors");
+const mongoose = require("mongoose");
 
+const mongoURI = require("./config/keys").MONGO_URI;
 const feedRoutes = require("./routes/feed");
 
 const app = express();
@@ -21,4 +23,9 @@ app.use(cors());
 
 app.use("/feed", feedRoutes);
 
-app.listen(8080, () => console.log("Server started!"));
+mongoose
+  .connect(mongoURI)
+  .then(result => {
+    app.listen(8080, () => console.log("Server started!"));
+  })
+  .catch(err => console.log(err));
