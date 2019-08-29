@@ -22,4 +22,24 @@ router.post(
   feedController.createPost
 );
 
+// GET /feed/post/:id
+router.get("/post/:postId", feedController.getPost);
+
+//PUT /feed/post/:id
+router.put(
+  "/post/:postId",
+  [
+    body("title")
+      .trim()
+      .isLength({ min: 5 }),
+    body("content")
+      .trim()
+      .isLength({ min: 5 })
+  ],
+  feedController.updatePost
+);
+
+//DELETE /feed/post/postId
+router.delete("/post/:postId", feedController.deletePost);
+
 module.exports = router;
