@@ -5,11 +5,12 @@ const bodyParser = require("body-parser");
 const cors = require("cors");
 const mongoose = require("mongoose");
 const multer = require("multer");
+const graphqlHttp = require("express-graphql");
+
+const graphqlSchema = require("./graphql/schema");
+const graphqlResolver = require("./graphql/resolvers");
 
 const mongoURI = require("./config/keys").MONGO_URI;
-
-const feedRoutes = require("./routes/feed");
-const authRoutes = require("./routes/auth");
 
 const app = express();
 
@@ -50,8 +51,32 @@ app.use("/images", express.static(path.join(__dirname, "images")));
 // });
 app.use(cors());
 
-app.use("/feed", feedRoutes);
-app.use("/auth", authRoutes);
+app.use((req, res, next) => {
+  if (req.method === "OPTIONS") {
+    return res.sendStatus(200);
+  }
+  next();
+});
+
+app.use(
+  "/graphql",
+  graphqlHttp({
+    schema: graphqlSchema,
+    rootValue: graphqlResolver,
+    graphiql: true,
+    formatError(err) {
+      if (!err.originalError) {
+        return err;
+      }
+
+      const data = err.originalError.data;
+      const message = err.message || "An error occured";
+      const code = err.originalError.code || 500;
+
+      return { message: message, status: code, data: data };
+    }
+  })
+);
 
 app.use((error, req, res, next) => {
   console.log(error);
@@ -66,11 +91,6 @@ app.use((error, req, res, next) => {
 mongoose
   .connect(mongoURI, { useNewUrlParser: true })
   .then(result => {
-    const server = app.listen(8080, () => console.log("Server started!"));
-
-    const io = require("./socket").init(server);
-    io.on("connection", socket => {
-      console.log("Client connected");
-    });
+    app.listen(8080, () => console.log("Server started!"));
   })
   .catch(err => console.log(err));
